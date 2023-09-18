@@ -59,7 +59,6 @@ fun program(h: Double) : ReturnValues {
         _x4 = _X4
         _x5 = _X5
 
-        t += h
         if(t - t_prev >= 0.01) {
             returnValues.pointsX1.add(Point(t.toFloat(), _x1.toFloat()))
             returnValues.pointsX2.add(Point(t.toFloat(), _x2.toFloat()))
@@ -68,6 +67,7 @@ fun program(h: Double) : ReturnValues {
             returnValues.pointsX5.add(Point(t.toFloat(), _x5.toFloat()))
             t_prev = t
         }
+        t += h
     } while (t <= T)
     returnValues._x4 = _x4
     return returnValues
@@ -97,7 +97,7 @@ fun programCalculationOnlyResult(h: Double) : Double {
 
     var t = 0.0
 
-    while(t <= T){
+    do {
         _X1 = _x1 + (-g * sin(_x2) + (p - a * Cx * _x1 * _x1) / (m - u * t)) * h
         _X2 = _x2 + (-g + (p * sin(_x5 - _x2) + a * Cy * _x1 * _x1) / (m - u * t)) / _x1 * h
         _X3 = _x3 + (m1 * a * (_x2 - _x5) * _x1 * _x1 - m2 * a * _x1 * _x1 * _x3) / (m - u * t) * h
@@ -111,6 +111,6 @@ fun programCalculationOnlyResult(h: Double) : Double {
         _x5 = _X5
 
         t += h
-    }
+    } while(t <= T)
     return _x4
 }

@@ -13,7 +13,7 @@ class ViewModel : ViewModel (
     var answer = mutableStateOf("")
     var answerH2 = mutableStateOf("")
     var relativeError = mutableStateOf("")
-    var switchForVisibleText = mutableStateOf(false)
+    val switch = mutableStateOf(0)
     lateinit var returnValues : ReturnValues
     val listX1 : MutableState<MutableList<Point>> by lazy {
         mutableStateOf(mutableListOf())
@@ -35,36 +35,57 @@ class ViewModel : ViewModel (
         mutableStateOf(mutableListOf())
     }
 
+    val listRelativeError : MutableState<MutableList<Point>> by lazy {
+        mutableStateOf(mutableListOf())
+    }
+
     fun calculation(){
-        switchForVisibleText.value = true
-        returnValues = program(h.value.toDouble())
-        listX1.value = returnValues.pointsX1
-        listX2.value = returnValues.pointsX2
-        listX3.value = returnValues.pointsX3
-        listX4.value = returnValues.pointsX4
-        listX5.value = returnValues.pointsX5
-        answer.value = returnValues._x4.toString()
-        calculationError()
+        if(h.value != "") {
+            returnValues = program(h.value.toDouble())
+            listX1.value = returnValues.pointsX1
+            listX2.value = returnValues.pointsX2
+            listX3.value = returnValues.pointsX3
+            listX4.value = returnValues.pointsX4
+            listX5.value = returnValues.pointsX5
+            answer.value = String.format("%.3f", returnValues._x4).replace(",", ".")
+            calculationError()
+        }
     }
 
     private fun calculationError(){
+        switch.value = 2
         val temp = programCalculationOnlyResult(h.value.toDouble() / 2)
-        answerH2.value = temp.toString()
+        answerH2.value = String.format("%.3f", temp).replace(",", ".")
         h2.value = (h.value.toDouble() / 2).toString()
-        relativeError.value = (abs((temp - answer.value.toDouble()) / temp) * 100).toString() + "%"
+        relativeError.value =
+            String.format("%.3f", abs((answerH2.value.toDouble() - answer.value.toDouble()) / answerH2.value.toDouble() ) * 100.0) + "%"
     }
 
     fun autoCalculation(){
-        switchForVisibleText.value = true
-        var tempH = 1.0
-        var relativeErrorTemp = 5.0
-        while(relativeErrorTemp > 1){
-            val hResult = programCalculationOnlyResult(tempH)
-            val h2Result = programCalculationOnlyResult(tempH / 2)
-            relativeErrorTemp = abs((h2Result - hResult) / h2Result) * 100
-            tempH /= 2
-        }
-        h.value = tempH.toString()
+        var step = 1.0
+        var relativeError: Double
+        do {
+            val hResult = programCalculationOnlyResult(step)
+            val h2Result = programCalculationOnlyResult(step / 2)
+            relativeError = abs((h2Result - hResult) / h2Result) * 100
+            step /= 2
+        } while (relativeError > 1)
+        h.value = (step * 2).toString()
+        switch.value = 2
         calculation()
+    }
+
+    fun graphRelativeErrorAndStep(){
+        var step = 1.0
+        var relativeError: Double = 5.0
+        while (relativeError > 1) {
+            val hResult = programCalculationOnlyResult(step)
+            val h2Result = programCalculationOnlyResult(step / 2)
+            relativeError = abs((h2Result - hResult) / h2Result) * 100
+            listRelativeError.value.add(Point(step.toFloat() * 10, relativeError.toFloat()))
+            step /= 2
+        }
+        switch.value = 1
+        listRelativeError.value.sortBy { it.x }
     }
 }

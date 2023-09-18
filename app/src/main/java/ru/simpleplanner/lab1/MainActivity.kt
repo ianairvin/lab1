@@ -54,9 +54,10 @@ class MainActivity : ComponentActivity() {
                             viewModel.answer,
                             viewModel.answerH2,
                             viewModel.relativeError,
-                            viewModel.switchForVisibleText,
+                            viewModel.switch,
                             { viewModel.calculation() },
-                            { viewModel.autoCalculation() }
+                            { viewModel.autoCalculation() },
+                            { viewModel.graphRelativeErrorAndStep() }
                         )
                         Spacer(modifier = Modifier.padding(8.dp))
                         Graphics(
@@ -64,7 +65,9 @@ class MainActivity : ComponentActivity() {
                             viewModel.listX2.value,
                             viewModel.listX3.value,
                             viewModel.listX4.value,
-                            viewModel.listX5.value
+                            viewModel.listX5.value,
+                            viewModel.listRelativeError.value,
+                            viewModel.switch
                         )
                     }
                 }

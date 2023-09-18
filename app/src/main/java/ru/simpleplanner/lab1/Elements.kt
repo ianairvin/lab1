@@ -1,6 +1,7 @@
 package ru.simpleplanner.lab1
 
 import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,9 +20,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import co.yml.charts.axis.AxisConfig
 import co.yml.charts.axis.AxisData
+import co.yml.charts.axis.DataCategoryOptions
+import co.yml.charts.axis.Gravity
 import co.yml.charts.common.model.Point
 import co.yml.charts.ui.linechart.LineChart
 import co.yml.charts.ui.linechart.model.GridLines
@@ -61,9 +67,10 @@ fun Answer(
     answer: MutableState<String>,
     answerH2: MutableState<String>,
     relativeError: MutableState<String>,
-    switch: MutableState<Boolean>,
+    switch: MutableState<Int>,
     calculation: () -> Unit,
     autoCalculation: () -> Unit,
+    graphRelativeErrorAndStep: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -84,7 +91,18 @@ fun Answer(
                 }
             )
         }
-        if(switch.value) {
+        Spacer(modifier = Modifier.padding(8.dp))
+        Row(
+            horizontalArrangement = Arrangement.Center
+        ) {
+            OutlinedButton(
+                onClick = graphRelativeErrorAndStep,
+                content = {
+                    Text("Зависимость отн.погрешности от шага")
+                }
+            )
+        }
+        if(switch.value == 2) {
             Spacer(modifier = Modifier.padding(8.dp))
             Text(text = "x4 при шаге h = " + answer.value)
             Spacer(modifier = Modifier.padding(8.dp))
@@ -103,9 +121,62 @@ fun Graphics(
     listX2: MutableList<Point>,
     listX3: MutableList<Point>,
     listX4: MutableList<Point>,
-    listX5: MutableList<Point>
+    listX5: MutableList<Point>,
+    listErrorAndStep: MutableList<Point>,
+    switch: MutableState<Int>
 ){
-    if(listX1.isNotEmpty()){
+    if(switch.value == 1) {
+        val listChartDataErrorAndStep = LineChartData(
+            linePlotData = LinePlotData(
+                lines = listOf(
+                    Line(
+                        dataPoints = listErrorAndStep,
+                        LineStyle(color = Color.DarkGray, width = 10.0f),
+                        IntersectionPoint(color = Color.DarkGray, radius = 4.dp),
+                        SelectionHighlightPoint(radius = 5.dp),
+                        ShadowUnderLine(),
+                        SelectionHighlightPopUp(
+                            popUpLabel = { x, y ->
+                                val xLabel = "x : ${String.format("%.3f", x / 10.0)} "
+                                xLabel
+                            }
+                        )
+                    )
+                ),
+            ),
+            xAxisData = AxisData.Builder()
+                .backgroundColor(Color.White)
+                .labelAndAxisLinePadding(8.dp)
+                .labelData { i -> (i / 9).toString()
+                }.build(),
+            yAxisData = AxisData.Builder()
+                .backgroundColor(Color.White)
+                .steps(listErrorAndStep.size)
+                .labelAndAxisLinePadding(16.dp)
+                .shouldDrawAxisLineTillEnd(flag = false)
+                .labelData { i ->
+                    val temp = listErrorAndStep.maxOf { it.y } / listErrorAndStep.size
+                    String.format("%.2f", (i * temp))
+                }.build(),
+            gridLines = GridLines(),
+            backgroundColor = Color.White
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(),
+        ) {
+            Text("зависимость относительной погрешности (ось Ох) от шага (ось Оу):")
+            Spacer(modifier = Modifier.padding(8.dp))
+            LineChart(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(400.dp),
+                lineChartData = listChartDataErrorAndStep
+            )
+        }
+    }
+
+    if(switch.value == 2) {
         val lineChartDataX1 = LineChartData(
             linePlotData = LinePlotData(
                 lines = listOf(
@@ -115,14 +186,19 @@ fun Graphics(
                         IntersectionPoint(color = Color.Red, radius = 4.dp),
                         SelectionHighlightPoint(radius = 5.dp),
                         ShadowUnderLine(),
-                        SelectionHighlightPopUp()
+                        SelectionHighlightPopUp(
+                            popUpLabel = { x, y ->
+                                val xLabel = "x : ${String.format("%.3f", x)} "
+                                val yLabel = "y : ${String.format("%.3f", y)}"
+                                "$xLabel $yLabel"
+                            }
+                        )
                     )
                 ),
             ),
             yAxisData = AxisData.Builder()
-                .axisStepSize(1.25.dp)
                 .backgroundColor(Color.White)
-                .steps(listX1.size - 1)
+                .steps(listX1.size)
                 .labelAndAxisLinePadding(0.dp)
                 .labelData { i -> " "}
                 .build(),
@@ -132,10 +208,11 @@ fun Graphics(
                 .labelAndAxisLinePadding(8.dp)
                 .labelData { i -> i.toString()}
                 .build(),
-            gridLines = GridLines(),
+            gridLines = GridLines(
+                enableHorizontalLines = false
+            ),
             backgroundColor = Color.White
         )
-
         val lineChartDataX2 = LineChartData(
             linePlotData = LinePlotData(
                 lines = listOf(
@@ -145,12 +222,17 @@ fun Graphics(
                         IntersectionPoint(color = Color.Green, radius = 4.dp),
                         SelectionHighlightPoint(radius = 5.dp),
                         ShadowUnderLine(),
-                        SelectionHighlightPopUp()
+                        SelectionHighlightPopUp(
+                            popUpLabel = { x, y ->
+                                val xLabel = "x : ${String.format("%.3f", x)} "
+                                val yLabel = "y : ${String.format("%.3f", y)}"
+                                "$xLabel $yLabel"
+                            }
+                        )
                     )
                 ),
             ),
             yAxisData = AxisData.Builder()
-                .axisStepSize(1.25.dp)
                 .backgroundColor(Color.White)
                 .steps(listX2.size - 1)
                 .labelAndAxisLinePadding(0.dp)
@@ -162,7 +244,9 @@ fun Graphics(
                 .labelAndAxisLinePadding(8.dp)
                 .labelData { i -> i.toString()}
                 .build(),
-            gridLines = GridLines(),
+            gridLines = GridLines(
+                enableHorizontalLines = false
+            ),
             backgroundColor = Color.White
         )
 
@@ -175,12 +259,17 @@ fun Graphics(
                         IntersectionPoint(color = Color.Blue, radius = 4.dp),
                         SelectionHighlightPoint(radius = 5.dp),
                         ShadowUnderLine(),
-                        SelectionHighlightPopUp()
+                        SelectionHighlightPopUp(
+                            popUpLabel = { x, y ->
+                                val xLabel = "x : ${String.format("%.3f", x)} "
+                                val yLabel = "y : ${String.format("%.3f", y)}"
+                                "$xLabel $yLabel"
+                            }
+                        )
                     )
                 ),
             ),
             yAxisData = AxisData.Builder()
-                .axisStepSize(1.25.dp)
                 .backgroundColor(Color.White)
                 .steps(listX3.size - 1)
                 .labelAndAxisLinePadding(0.dp)
@@ -192,7 +281,9 @@ fun Graphics(
                 .labelAndAxisLinePadding(8.dp)
                 .labelData { i -> i.toString()}
                 .build(),
-            gridLines = GridLines(),
+            gridLines = GridLines(
+                enableHorizontalLines = false
+            ),
             backgroundColor = Color.White
         )
 
@@ -205,12 +296,17 @@ fun Graphics(
                         IntersectionPoint(color = Color.Yellow, radius = 4.dp),
                         SelectionHighlightPoint(radius = 5.dp),
                         ShadowUnderLine(),
-                        SelectionHighlightPopUp()
+                        SelectionHighlightPopUp(
+                            popUpLabel = { x, y ->
+                                val xLabel = "x : ${String.format("%.3f", x)} "
+                                val yLabel = "y : ${String.format("%.3f", y)}"
+                                "$xLabel $yLabel"
+                            }
+                        )
                     )
                 ),
             ),
             yAxisData = AxisData.Builder()
-                .axisStepSize(1.25.dp)
                 .backgroundColor(Color.White)
                 .steps(listX4.size - 1)
                 .labelAndAxisLinePadding(0.dp)
@@ -222,7 +318,9 @@ fun Graphics(
                 .labelAndAxisLinePadding(8.dp)
                 .labelData { i -> i.toString()}
                 .build(),
-            gridLines = GridLines(),
+            gridLines = GridLines(
+                enableHorizontalLines = false
+            ),
             backgroundColor = Color.White
         )
 
@@ -235,12 +333,17 @@ fun Graphics(
                         IntersectionPoint(color = Color.Magenta, radius = 4.dp),
                         SelectionHighlightPoint(radius = 5.dp),
                         ShadowUnderLine(),
-                        SelectionHighlightPopUp()
+                        SelectionHighlightPopUp(
+                            popUpLabel = { x, y ->
+                                val xLabel = "x : ${String.format("%.3f", x)} "
+                                val yLabel = "y : ${String.format("%.3f", y)}"
+                                "$xLabel $yLabel"
+                            }
+                        )
                     )
                 ),
             ),
             yAxisData = AxisData.Builder()
-                .axisStepSize(1.25.dp)
                 .backgroundColor(Color.White)
                 .steps(listX5.size - 1)
                 .labelAndAxisLinePadding(0.dp)
@@ -252,7 +355,9 @@ fun Graphics(
                 .labelAndAxisLinePadding(8.dp)
                 .labelData { i -> i.toString()}
                 .build(),
-            gridLines = GridLines(),
+            gridLines = GridLines(
+                enableHorizontalLines = false
+            ),
             backgroundColor = Color.White
         )
 
@@ -260,6 +365,7 @@ fun Graphics(
             modifier = Modifier
                 .fillMaxWidth()
         ) {
+            Text("x1:")
             LineChart(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -267,6 +373,7 @@ fun Graphics(
                 lineChartData = lineChartDataX1
             )
             Spacer(modifier = Modifier.padding(8.dp))
+            Text("x2:")
             LineChart(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -274,6 +381,7 @@ fun Graphics(
                 lineChartData = lineChartDataX2
             )
             Spacer(modifier = Modifier.padding(8.dp))
+            Text("x3:")
             LineChart(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -281,6 +389,7 @@ fun Graphics(
                 lineChartData = lineChartDataX3
             )
             Spacer(modifier = Modifier.padding(8.dp))
+            Text("x4:")
             LineChart(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -288,6 +397,7 @@ fun Graphics(
                 lineChartData = lineChartDataX4
             )
             Spacer(modifier = Modifier.padding(8.dp))
+            Text("x5:")
             LineChart(
                 modifier = Modifier
                     .fillMaxWidth()
